@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Logistix — Сервис попутных грузов и доставки</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --gray: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); line-height: 1.5; padding-bottom: 40px; }
+
+        header {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .header-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: 24px; font-weight: 900; color: var(--text); text-decoration: none; letter-spacing: -0.5px; }
+        .logo span { color: var(--primary); }
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .btn:hover { background: var(--primary-dark); }
+        .btn:disabled { background: var(--gray); cursor: not-allowed; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: #f8fafc; }
+
+        .container { max-width: 1100px; margin: 16px auto; padding: 0 16px; }
+
+        .search-box {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input, select, textarea {
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            width: 100%;
+            background: #f8fafc;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); background: #fff; }
+
+        .ads-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+            gap: 16px;
+        }
+        .ad-card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid var(--border);
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            width: fit-content;
+        }
+        .badge-cargo { background: #fef3c7; color: #92400e; }
+        .badge-driver { background: #dcfce7; color: #166534; }
+
+        .route { font-size: 18px; font-weight: 800; margin-bottom: 6px; color: var(--text); }
+        .ad-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+        .ad-desc { font-size: 14px; color: var(--gray); margin-bottom: 16px; }
+
+        .ad-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+            margin-top: auto;
+        }
+        .price { font-size: 19px; font-weight: 800; color: var(--text); }
+        .date { font-size: 12px; color: var(--gray); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 22px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 440px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .close-btn {
+            position: absolute;
+            top: 14px; right: 16px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+        .status-msg { text-align: center; padding: 40px; color: var(--gray); grid-column: 1/-1; }
+
+        @media (max-width: 768px) {
+            .search-box { grid-template-columns: 1fr; }
+            .logo { font-size: 21px; }
+            .btn { padding: 9px 14px; font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-container">
+        <a href="#" class="logo">Logist<span>ix</span></a>
+        <button class="btn" onclick="openModal('addModal')">+ Разместить</button>
+    </div>
+</header>
+
+<div class="container">
+    <div class="search-box">
+        <input type="text" id="filterFrom" placeholder="Откуда (город)" oninput="filterAds()">
+        <input type="text" id="filterTo" placeholder="Куда (город)" oninput="filterAds()">
+        <select id="filterType" onchange="filterAds()">
+            <option value="all">Все объявления</option>
+            <option value="cargo">📦 Отправить груз</option>
+            <option value="driver">🚚 Возьму попутно</option>
+        </select>
+        <button class="btn btn-outline" onclick="resetFilters()">Сбросить</button>
+    </div>
+
+    <div class="ads-grid" id="adsContainer">
+        <div class="status-msg">Загрузка объявлений...</div>
+    </div>
+</div>
+
+<div class="modal" id="addModal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('addModal')">&times;</span>
+        <h2 style="margin-bottom: 15px; font-size: 20px;">Новое объявление</h2>
+        <form id="adForm" onsubmit="addAd(event)">
+            <div class="form-group">
+                <label>Тип объявления</label>
+                <select id="adType" required>
+                    <option value="cargo">📦 Я отправитель (ищу доставку)</option>
+                    <option value="driver">🚚 Я водитель / курьер (возьму груз)</option>
+                </select>
+            </div>
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label>Откуда</label>
+                    <input type="text" id="adFrom" placeholder="Москва" required>
+                </div>
+                <div>
+                    <label>Куда</label>
+                    <input type="text" id="adTo" placeholder="Казань" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Что везем / Какой транспорт</label>
+                <input type="text" id="adTitle" placeholder="Коробки 50 кг / Газель" required>
+            </div>
+            <div class="form-group">
+                <label>Подробности</label>
+                <textarea id="adDesc" rows="3" placeholder="Габариты, дата отправки, условия..." required></textarea>
+            </div>
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label>Цена (₽)</label>
+                    <input type="number" id="adPrice" placeholder="3000" required>
+                </div>
+                <div>
+                    <label>Телефон</label>
+                    <input type="tel" id="adPhone" placeholder="+7 (999) 000-00-00" required>
+                </div>
+            </div>
+            <button type="submit" id="submitBtn" class="btn" style="width: 100%;">Опубликовать для всех</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="contactModal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('contactModal')">&times;</span>
+        <h3 id="modalTitle" style="margin-bottom: 8px;"></h3>
+        <p id="modalRoute" style="font-weight: bold; color: var(--primary); margin-bottom: 10px;"></p>
+        <p id="modalDesc" style="font-size: 14px; margin-bottom: 20px; color: var(--gray);"></p>
+        <div style="background: #f1f5f9; padding: 15px; border-radius: 12px; text-align: center;">
+            <div style="font-size: 12px; color: var(--gray);">Телефон для связи:</div>
+            <a id="modalPhoneLink" href="#" style="display: block; font-size: 20px; font-weight: 800; margin-top: 5px; color: var(--text); text-decoration: none;"></a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // ВСТАВЬ СВОИ ДАННЫЕ ИЗ JSONBIN.IO НИЖЕ:
+    const BIN_ID = 'ВСТАВЬ_СЮДА_BIN_ID';
+    const MASTER_KEY = 'ВСТАВЬ_СЮДА_MASTER_KEY';
+    // ==========================================
+
+    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    let allAds = [];
+
+    async function loadAds() {
+        const container = document.getElementById('adsContainer');
+
+        if (BIN_ID.includes('ВСТАВЬ_СЮДА') || MASTER_KEY.includes('ВСТАВЬ_СЮДА')) {
+            container.innerHTML = '<div class="status-msg">⚠️ Вставь BIN_ID и MASTER_KEY в код файла index.html.</div>';
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_URL}/latest`, {
+                headers: { 'X-Master-Key': MASTER_KEY }
+            });
+            if (!res.ok) throw new Error('Ошибка сети или неверные ключи');
+            const json = await res.json();
+            allAds = Array.isArray(json.record) ? json.record : [];
+            filterAds();
+        } catch (err) {
+            container.innerHTML = `<div class="status-msg">Ошибка загрузки: ${escapeHtml(err.message)}</div>`;
+        }
+    }
+
+    function filterAds() {
+        const container = document.getElementById('adsContainer');
+        const fromVal = document.getElementById('filterFrom').value.toLowerCase().trim();
+        const toVal = document.getElementById('filterTo').value.toLowerCase().trim();
+        const typeVal = document.getElementById('filterType').value;
+
+        const filtered = allAds.filter(ad => {
+            const matchFrom = (ad.from_city || '').toLowerCase().includes(fromVal);
+            const matchTo = (ad.to_city || '').toLowerCase().includes(toVal);
+            const matchType = typeVal === 'all' || ad.type === typeVal;
+            return matchFrom && matchTo && matchType;
+        });
+
+        container.innerHTML = '';
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="status-msg">Объявлений пока нет. Станьте первым!</div>';
+            return;
+        }
+
+        filtered.forEach(ad => {
+            const badgeClass = ad.type === 'cargo' ? 'badge-cargo' : 'badge-driver';
+            const badgeText = ad.type === 'cargo' ? '📦 Отправить груз' : '🚚 Возьму попутно';
+            const dateStr = ad.created_at
+                ? new Date(ad.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                : '';
+
+            const card = document.createElement('div');
+            card.className = 'ad-card';
+            card.innerHTML = `
+                <div>
+                    <span class="badge ${badgeClass}">${badgeText}</span>
+                    <div class="route">${escapeHtml(ad.from_city)} → ${escapeHtml(ad.to_city)}</div>
+                    <div class="ad-title">${escapeHtml(ad.title)}</div>
+                    <div class="ad-desc">${escapeHtml(ad.description)}</div>
+                </div>
+                <div>
+                    <div class="ad-meta">
+                        <div>
+                            <div class="price">${Number(ad.price).toLocaleString('ru-RU')} ₽</div>
+                            <div class="date">${dateStr}</div>
+                        </div>
+                        <button class="btn" onclick="showContact(${ad.id})">Связаться</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    async function addAd(e) {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = 'Публикация...';
+
+        const newAd = {
+            id: Date.now(),
+            created_at: new Date().toISOString(),
+            type: document.getElementById('adType').value,
+            from_city: document.getElementById('adFrom').value.trim(),
+            to_city: document.getElementById('adTo').value.trim(),
+            title: document.getElementById('adTitle').value.trim(),
+            description: document.getElementById('adDesc').value.trim(),
+            price: Number(document.getElementById('adPrice').value),
+            phone: document.getElementById('adPhone').value.trim()
+        };
+
+        const updatedAds = [newAd, ...allAds];
+
+        try {
+            const res = await fetch(API_URL, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': MASTER_KEY
+                },
+                body: JSON.stringify(updatedAds)
+            });
+            if (!res.ok) throw new Error('Не удалось сохранить объявление');
+
+            allAds = updatedAds;
+            document.getElementById('adForm').reset();
+            closeModal('addModal');
+            filterAds();
+        } catch (err) {
+            alert('Ошибка при публикации: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = 'Опубликовать для всех';
+        }
+    }
+
+    function showContact(id) {
+        const ad = allAds.find(item => item.id === id);
+        if (!ad) return;
+        document.getElementById('modalTitle').innerText = ad.title;
+        document.getElementById('modalRoute').innerText = `${ad.from_city} → ${ad.to_city} (${Number(ad.price).toLocaleString('ru-RU')} ₽)`;
+        document.getElementById('modalDesc').innerText = ad.description;
+
+        const phoneLink = document.getElementById('modalPhoneLink');
+        phoneLink.innerText = ad.phone;
+        phoneLink.href = 'tel:' + ad.phone.replace(/[^+\d]/g, '');
+
+        openModal('contactModal');
+    }
+
+    function resetFilters() {
+        document.getElementById('filterFrom').value = '';
+        document.getElementById('filterTo').value = '';
+        document.getElementById('filterType').value = 'all';
+        filterAds();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.innerText = String(text ?? '');
+        return div.innerHTML;
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.classList.remove('active');
+        }
+    }
+
+    loadAds();
+</script>
+
+</body>
+</html>
+const GITHUB_OWNER = 'romauchmorgmi-design';
+const GITHUB_REPO  = 'logistix';
+const GITHUB_TOKEN = 'ghp_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';
